@@ -1,5 +1,9 @@
+use std::fs::OpenOptions;
+use std::thread::sleep;
+use std::time::Duration;
+use std::io::Write;
 use crate::client::Dut;
-use crate::config::{Band, GainType, TestBand};
+use crate::config::{Band, GainType, GlobPhyNum, TestBand};
 
 pub trait TestCase {
     fn traverse(&self) -> impl Iterator<Item=u8>;
@@ -9,8 +13,9 @@ pub trait TestCase {
 
     fn run_single_fem(&self, idx:u8, dut: &mut Dut) -> anyhow::Result<()> {
         let band = self.get_band();
+        let channel = GlobPhyNum::get_channel();
         dut.fix_gain(band, idx, 0, 0)?;
-        let iq_name = format!("{}_iq_{}_0_00.txt", band, idx);
+        let iq_name = format!("{}_iq_{}_{}_0_00.txt", band, channel, idx);
         dut.dump_iq(band, iq_name.clone())?;
         dut.copy_files(iq_name)?;
         dut.del_files()?;
@@ -18,8 +23,9 @@ pub trait TestCase {
     }
     fn run_single_lna(&self, idx:u8, dut: &mut Dut) -> anyhow::Result<()> {
         let band = self.get_band();
+        let channel = GlobPhyNum::get_channel();
         dut.fix_gain(band, 0, idx, 0)?;
-        let iq_name = format!("{}_iq_0_{}_00.txt", band, idx);
+        let iq_name = format!("{}_iq_{}_0_{}_00.txt", band, channel, idx);
         dut.dump_iq(band, iq_name.clone())?;
         dut.copy_files(iq_name)?;
         dut.del_files()?;
@@ -27,11 +33,25 @@ pub trait TestCase {
     }
     fn run_single_vga(&self, idx:u8, dut: &mut Dut) -> anyhow::Result<()> {
         let band = self.get_band();
+        let channel = GlobPhyNum::get_channel();
         dut.fix_gain(band, 0, 0, idx)?;
-        let iq_name = format!("{}_iq_0_0_{:02}.txt", band, idx);
+        let iq_name = format!("{}_iq_{}_0_0_{:02}.txt", band, channel, idx);
         dut.dump_iq(band, iq_name.clone())?;
         dut.copy_files(iq_name)?;
         dut.del_files()?;
+        // dut.devmem(0x30d0004c, 0x80000000)?;
+        // sleep(Duration::from_millis(1000));
+        // let res_path1 = dut.read_reg(0x30d0004c)?;
+        //
+        // dut.devmem(0x30d00050, 0x80000000)?;
+        // sleep(Duration::from_millis(1000));
+        // let res_path2 = dut.read_reg(0x30d00050)?;
+        //
+        // let mut file = OpenOptions::new()
+        //     .create(true)
+        //     .append(true)
+        //     .open("result.txt")?;
+        // writeln!(file, "vga:{}, path1_dc:{}, path2_dc:{}", idx, res_path1, res_path2)?;
         Ok(())
     }
 

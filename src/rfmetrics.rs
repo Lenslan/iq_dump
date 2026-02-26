@@ -16,11 +16,12 @@ struct RfMetrics {
     channel_power: f64,
     snr: f64,
     sfdr: f64,
-    noise_per_hz: f64
+    noise_per_hz: f64,
+    dc_power: f64
 }
 
 impl RfMetrics {
-    fn new(fund_freq: f64, fund_power: f64, total_power: f64, channel_power: f64, snr: f64, sfdr: f64, noise_per_hz: f64) -> Self {
+    fn new(fund_freq: f64, fund_power: f64, total_power: f64, channel_power: f64, snr: f64, sfdr: f64, noise_per_hz: f64, dc_power: f64) -> Self {
         Self {
             fund_freq,
             fund_power,
@@ -29,6 +30,7 @@ impl RfMetrics {
             snr,
             sfdr,
             noise_per_hz,
+            dc_power
         }
     }
 }
@@ -272,8 +274,8 @@ trait CalcMetric {
         let channel_power = 10.0 * (channel_energy_lin + 1e-12).log10() + power_offset_db;
 
         // 8. DC Power (Unused in return)
-        // let dc_power_lin = psd_energy[dc_idx];
-        // let dc_power = 10.0 * (dc_power_lin + 1e-12).log10() + power_offset_db;
+        let dc_power_lin = psd_energy[dc_idx];
+        let dc_power = 10.0 * (dc_power_lin + 1e-12).log10() + power_offset_db;
 
         // 9. Average Bin Noise (Unused in return)
         // let avg_bin_noise_lin = noise_power_lin / n as f64;
@@ -287,6 +289,7 @@ trait CalcMetric {
             snr,
             sfdr,
             noise_per_hz,
+            dc_power
         )
     }
 }
@@ -348,7 +351,7 @@ impl FileParser {
                     // hb_iq_{fem}_{lna}_{vga}.txt
                     let res = Self::parse_file(f, 40);
                     // Some((f[6..12].into_string(), res))
-                    Self::write_excel(sheet, line, res, &file[6..12]).unwrap();
+                    Self::write_excel(sheet, line, res, &file[6..17]).unwrap();
                     line += 1;
                 }
             });
@@ -373,7 +376,7 @@ impl FileParser {
         sheet.merge_range(0, 6, 0, 9, "Path2", &path_format)?;
 
         sheet.set_row_height(1, 28)?;
-        let header = ["Gain\n(fem-lna-vga)", "Fund_freq", "Fund_power", "Total_power", "Channel_power"];
+        let header = ["Gain\n(fem-lna-vga)", "Fund_freq", "Fund_power", "Total_power", "Channel_power", "DC_power"];
         for (idx, item) in header.iter().enumerate() {
             if idx == 0 {
                 sheet.set_column_width(idx as ColNum, 32)?;
@@ -398,10 +401,12 @@ impl FileParser {
         sheet.write(line, 2, metrics.0.fund_power)?;
         sheet.write(line, 3, metrics.0.total_power)?;
         sheet.write(line, 4, metrics.0.channel_power)?;
+        sheet.write(line, 5, metrics.0.dc_power)?;
         sheet.write(line, 6, metrics.1.fund_freq)?;
         sheet.write(line, 7, metrics.1.fund_power)?;
         sheet.write(line, 8, metrics.1.total_power)?;
         sheet.write(line, 9, metrics.1.channel_power)?;
+        sheet.write(line, 10, metrics.1.dc_power)?;
         Ok(())
 
     }

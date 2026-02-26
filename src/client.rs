@@ -30,6 +30,11 @@ enum DumpCommand {
         cmd: String,
         args: Vec<String>
     },
+    CopyDir(String),
+    IwInfo,
+    ReadReg{
+        addr: u32,
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -238,11 +243,11 @@ impl Dut {
         Ok(())
     }
 
-    pub fn open_rx(&mut self, is_hb: Band) -> anyhow::Result<()> {
+    pub fn open_rx(&mut self, is_hb: Band, channel: u32) -> anyhow::Result<()> {
         let args = if is_hb == Band::HB {
-            "wlan0 fastconfig -f 5180 -c 5180 -w 1 -u 1 -r"
+            format!("wlan0 fastconfig -f {} -c {} -w 1 -u 1 -r", channel, channel)
         } else {
-            "wlan1 fastconfig -f 2412 -c 2412 -w 1 -u 1 -r"
+            format!("wlan1 fastconfig -f {} -c {} -w 1 -u 1 -r", channel, channel)
         }
             .trim()
             .split(" ")
@@ -251,6 +256,8 @@ impl Dut {
         let cmd = DumpCommand::ATECmd{cmd: "ate_cmd".into(), args};
         self.send_cmd(cmd)?;
         self.handle_resp()?;
+        
+        GlobPhyNum::set_channel(channel);
         Ok(())
     }
 
@@ -270,6 +277,29 @@ impl Dut {
         Ok(())
     }
 
+    pub fn read_reg(&mut self, addr: u32) -> anyhow::Result<String> {
+        let cmd = DumpCommand::ReadReg{addr};
+        self.send_cmd(cmd)?;
+        let res = self.handle_resp()?;
+        if res.is_error {
+            Err(anyhow!("can not read".to_string()))
+        } else {
+            let size = res.file_size as usize;
+            let mut text = vec![0u8; size];
+            self.reader.read_exact(&mut text)?;
+            let val = String::from_utf8_lossy(&text);
+            Ok(val.to_string())
+        }
+    }
+
+    pub fn devmem(&mut self, addr: u32, value: u32) -> anyhow::Result<()> {
+        let cmd = DumpCommand::SetReg{addr, value};
+        self.send_cmd(cmd)?;
+        self.handle_resp()?;
+        Ok(())
+    }
+
+    
     pub fn run_test(&mut self, band: TestBand) {
         band.run_test(self)
     }
@@ -323,14 +353,23 @@ impl PyDut {
         Ok(())
     }
 
-    fn open_rx(&mut self, band: String) -> PyResult<()> {
+    fn open_rx(&mut self, band: String, channel: u32) -> PyResult<()> {
         let band = if band == "HB" {
             HB
         } else {
             LB
         };
-        self.dut.open_rx(band).unwrap();
+        self.dut.open_rx(band, channel).unwrap();
         Ok(())
+    }
+
+    fn devmem(&mut self, addr: u32, value: u32) -> PyResult<()> {
+        self.dut.devmem(addr, value).unwrap();
+        Ok(())
+    }
+
+    fn read_reg(&mut self, addr: u32) -> PyResult<String> {
+        Ok(self.dut.read_reg(addr).unwrap())
     }
 
     fn run_test(&mut self, band: String, gain: String, v: Vec<u8>) -> PyResult<()> {

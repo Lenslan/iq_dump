@@ -51,9 +51,10 @@ impl GainType {
 pub struct GlobPhyNum {
     hb: u8,
     lb: u8,
+    channel: u32
 }
 static GLOB_PHY_NUM_INSTANCE: LazyLock<Mutex<GlobPhyNum>> = LazyLock::new(|| {
-    Mutex::new(GlobPhyNum{hb: 1, lb: 0})
+    Mutex::new(GlobPhyNum{hb: 1, lb: 0, channel: 0})
 });
 
 impl GlobPhyNum {
@@ -77,6 +78,16 @@ impl GlobPhyNum {
         let mut num = GLOB_PHY_NUM_INSTANCE.lock().unwrap();
         let maxnum = num.lb.max(num.hb);
         num.lb = maxnum+1;
+    }
+
+    pub fn set_channel(channel: u32) {
+        let mut num = GLOB_PHY_NUM_INSTANCE.lock().unwrap();
+        num.channel = channel;
+    }
+
+    pub fn get_channel() -> u32 {
+        let num = GLOB_PHY_NUM_INSTANCE.lock().unwrap();
+        num.channel
     }
 }
 
