@@ -13,6 +13,7 @@ def main():
     # dut.run_test("LB", "Fem", list(range(0, 2)))
     # dut.run_test("LB", "Lna", list(range(1, 8)))
     dut.run_test("LB", "Vga", list(range(0, 32)))
+    iq.set_phynum("lb", 0)
     dut.close_rx("LB")
 
     # -------------------------------------------

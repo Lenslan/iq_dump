@@ -3,6 +3,7 @@ use pyo3::types::PyModule;
 use pyo3::prelude::*;
 use walkdir::WalkDir;
 use crate::client::PyDut;
+use crate::config::GlobPhyNum;
 use crate::rfmetrics::FileParser;
 
 mod client;
@@ -36,6 +37,16 @@ fn parse_dir(dir: String) -> PyResult<()> {
 
 }
 
+#[pyfunction]
+fn set_phynum(band:String, val:u64) -> PyResult<()> {
+    if band == "hb" {
+        GlobPhyNum::set_hb(val as u8);
+    } else {
+        GlobPhyNum::set_lb(val as u8);
+    };
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,6 +61,7 @@ mod tests {
 #[pymodule]
 fn iq_dump(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(init_logger, m)?)?;
+    m.add_function(wrap_pyfunction!(set_phynum, m)?)?;
     m.add_function(wrap_pyfunction!(parse_dir, m)?)?;
     m.add_class::<PyDut>()?;
     Ok(())

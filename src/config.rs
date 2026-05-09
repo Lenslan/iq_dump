@@ -68,6 +68,16 @@ impl GlobPhyNum {
         num.lb
     }
 
+    pub fn set_lb(val: u8) {
+        let mut num = GLOB_PHY_NUM_INSTANCE.lock().unwrap();
+        num.lb = val
+    }
+
+    pub fn set_hb(val: u8) {
+        let mut num = GLOB_PHY_NUM_INSTANCE.lock().unwrap();
+        num.hb = val
+    }
+
     pub fn add_hb() {
         let mut num = GLOB_PHY_NUM_INSTANCE.lock().unwrap();
         let maxnum = num.hb.max(num.lb);

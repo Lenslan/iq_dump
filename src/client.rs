@@ -79,9 +79,9 @@ impl Dut {
     pub fn dump_iq(&mut self, band_5g: Band, file_name: String) -> anyhow::Result<bool> {
         // Send command
         let cmd = if band_5g == Band::HB {
-            format!("echo 0 1 0 15 0 e000 0 2 0  1 0 0 0 > /sys/kernel/debug/ieee80211/phy{}/siwifi/iq_engine", GlobPhyNum::hb())
+            format!("echo 0 1 0 15 0 e000 0 2 0  1 0 0 0 > /sys/kernel/debug/ieee80211/phy{}/bcwifi/iq_engine", GlobPhyNum::hb())
         } else {
-            format!("echo 0 1 0 15 0 1c000 0 2 0  1 0 0 0 > /sys/kernel/debug/ieee80211/phy{}/siwifi/iq_engine", GlobPhyNum::lb())
+            format!("echo 0 1 0 15 0 1c000 0 2 0  1 0 0 0 > /sys/kernel/debug/ieee80211/phy{}/bcwifi/iq_engine", GlobPhyNum::lb())
         };
         let cmd = DumpCommand::ShellCmd(cmd.into());
         self.send_cmd(cmd)?;
@@ -181,9 +181,9 @@ impl Dut {
         // devmem 0x04e00478 32 7
         // devmem 0x04e004c8 32 7
         let cmd = if band_5g == Band::HB {
-            "echo 30000000.wmac > /sys/bus/platform/drivers/siwifi_umac/unbind"
+            "echo 30000000.wmac > /sys/bus/platform/drivers/bcwifi_umac/unbind"
         } else {
-            "echo 20000000.wmac > /sys/bus/platform/drivers/siwifi_umac/unbind"
+            "echo 20000000.wmac > /sys/bus/platform/drivers/bcwifi_umac/unbind"
         };
         let cmd = DumpCommand::ShellCmd(cmd.into());
         self.send_cmd(cmd)?;
@@ -207,9 +207,9 @@ impl Dut {
 
     pub fn shut_up_band(&mut self, band_5g: Band) -> anyhow::Result<()> {
         let cmd = if band_5g == Band::HB {
-            "echo 30000000.wmac > /sys/bus/platform/drivers/siwifi_umac/bind"
+            "echo 30000000.wmac > /sys/bus/platform/drivers/bcwifi_umac/bind"
         } else {
-            "echo 20000000.wmac > /sys/bus/platform/drivers/siwifi_umac/bind"
+            "echo 20000000.wmac > /sys/bus/platform/drivers/bcwifi_umac/bind"
         };
         let cmd = DumpCommand::ShellCmd(cmd.into());
         self.send_cmd(cmd)?;
